@@ -502,11 +502,11 @@ export default function EditorPage() {
 
   const gitStatus = daemon.gitStatus;
   const stagedChanges = useMemo(
-    () => (gitStatus?.changes ?? []).filter((c) => c.staged),
+    () => (gitStatus?.changes ?? []).filter((c: { staged: boolean; path: string }) => c.staged),
     [gitStatus?.changes],
   );
   const unstagedChanges = useMemo(
-    () => (gitStatus?.changes ?? []).filter((c) => !c.staged),
+    () => (gitStatus?.changes ?? []).filter((c: { staged: boolean; path: string }) => !c.staged),
     [gitStatus?.changes],
   );
 
@@ -2105,8 +2105,8 @@ The AI assistant will read and update this file during compilation.
   const handleStageAll = useCallback(() => {
     if (!gitStatus) return;
     const unstaged = gitStatus.changes
-      .filter((c) => !c.staged)
-      .map((c) => c.path);
+      .filter((c: { staged: boolean }) => !c.staged)
+      .map((c: { path: string }) => c.path);
     if (unstaged.length > 0) {
       daemon.gitAdd(unstaged);
     }
@@ -2121,8 +2121,8 @@ The AI assistant will read and update this file during compilation.
 
   const handleUnstageAll = useCallback(() => {
     const stagedPaths = (daemon.gitStatus?.changes ?? [])
-      .filter((c) => c.staged)
-      .map((c) => c.path);
+      .filter((c: { staged: boolean }) => c.staged)
+      .map((c: { path: string }) => c.path);
     if (stagedPaths.length > 0) {
       daemon.gitUnstage(stagedPaths);
     }
@@ -2414,11 +2414,11 @@ The AI assistant will read and update this file during compilation.
         }
       }
 
-      const diffChunks = await Promise.all(
-        stagedChanges.map((change) => daemon.gitDiff(change.path, true)),
+      const diffChunks: string[] = await Promise.all(
+        stagedChanges.map((change: { path: string }) => daemon.gitDiff(change.path, true)),
       );
       const mergedDiff = diffChunks
-        .filter((chunk) => chunk.trim().length > 0)
+        .filter((chunk: string) => chunk.trim().length > 0)
         .join("\n\n")
         .slice(0, AI_COMMIT_DIFF_LIMIT)
         .trim();
