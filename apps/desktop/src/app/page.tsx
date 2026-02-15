@@ -42,6 +42,7 @@ import { RecentProjects } from "@/components/recent-projects";
 import { useRecentProjects } from "@/lib/recent-projects";
 import { pathSync } from "@/lib/path";
 import { COMPILE_PROMPT, type MainFileDetectionResult, type SynctexResult } from "@/lib/latex/types";
+import type { GitFileChange } from "@lmms-lab/writer-shared";
 const PdfViewer = dynamic(
   () => import("@/components/editor/pdf-viewer").then((mod) => mod.PdfViewer),
   { ssr: false },
@@ -502,12 +503,11 @@ export default function EditorPage() {
 
   const gitStatus = daemon.gitStatus;
   const stagedChanges = useMemo(
-    () => gitStatus?.changes.filter((c: { staged: boolean; path: string }) => c.staged) ?? [],
+    (): GitFileChange[] => gitStatus?.changes.filter((c) => c.staged) ?? [],
     [gitStatus?.changes],
   );
   const unstagedChanges = useMemo(
-    () =>
-      gitStatus?.changes.filter((c: { staged: boolean; path: string }) => !c.staged) ?? [],
+    (): GitFileChange[] => gitStatus?.changes.filter((c) => !c.staged) ?? [],
     [gitStatus?.changes],
   );
 
@@ -2106,8 +2106,8 @@ The AI assistant will read and update this file during compilation.
   const handleStageAll = useCallback(() => {
     if (!gitStatus) return;
     const unstaged = gitStatus.changes
-      .filter((c: { staged: boolean }) => !c.staged)
-      .map((c: { path: string }) => c.path);
+      .filter((c: GitFileChange) => !c.staged)
+      .map((c: GitFileChange) => c.path);
     if (unstaged.length > 0) {
       daemon.gitAdd(unstaged);
     }
@@ -2121,9 +2121,9 @@ The AI assistant will read and update this file during compilation.
   );
 
   const handleUnstageAll = useCallback(() => {
-    const stagedPaths = (daemon.gitStatus?.changes ?? [])
-      .filter((c: { staged: boolean }) => c.staged)
-      .map((c: { path: string }) => c.path);
+    const stagedPaths = (daemon.gitStatus?.changes ?? ([] as GitFileChange[]))
+      .filter((c) => c.staged)
+      .map((c) => c.path);
     if (stagedPaths.length > 0) {
       daemon.gitUnstage(stagedPaths);
     }
