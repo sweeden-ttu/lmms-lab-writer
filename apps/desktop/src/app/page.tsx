@@ -2122,8 +2122,8 @@ The AI assistant will read and update this file during compilation.
 
   const handleUnstageAll = useCallback(() => {
     const stagedPaths = (daemon.gitStatus?.changes ?? [])
-      .filter((c) => c.staged)
-      .map((c) => c.path);
+      .filter((c: { staged: boolean }) => c.staged)
+      .map((c: { path: string }) => c.path);
     if (stagedPaths.length > 0) {
       daemon.gitUnstage(stagedPaths);
     }
