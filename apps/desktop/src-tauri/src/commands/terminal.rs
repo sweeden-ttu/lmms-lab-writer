@@ -322,3 +322,41 @@ pub async fn kill_pty(state: State<'_, PtyState>, id: String) -> Result<(), Stri
         Err(format!("PTY instance not found: {}", id))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn normalize_shell_trims_whitespace() {
+        assert_eq!(normalize_shell("  /bin/bash  "), "/bin/bash");
+    }
+
+    #[test]
+    fn normalize_shell_removes_quotes() {
+        assert_eq!(normalize_shell("\"powershell.exe\""), "powershell.exe");
+    }
+
+    #[test]
+    fn normalize_shell_clean_input_passthrough() {
+        assert_eq!(normalize_shell("/bin/zsh"), "/bin/zsh");
+    }
+
+    #[test]
+    fn build_env_path_returns_non_empty() {
+        let result = build_env_path(String::new());
+        assert!(!result.is_empty());
+    }
+
+    #[test]
+    fn build_env_path_contains_expected_components() {
+        let result = build_env_path("/existing/path".to_string());
+        assert!(result.contains("/existing/path"));
+
+        #[cfg(target_os = "macos")]
+        assert!(result.contains("/opt/homebrew/bin"));
+
+        #[cfg(target_os = "linux")]
+        assert!(result.contains("/usr/local/bin"));
+    }
+}
