@@ -502,12 +502,12 @@ export default function EditorPage() {
 
   const gitStatus = daemon.gitStatus;
   const stagedChanges = useMemo(
-    () => gitStatus?.changes.filter((c: { staged: boolean }) => c.staged) ?? [],
+    () => gitStatus?.changes.filter((c: { staged: boolean; path: string }) => c.staged) ?? [],
     [gitStatus?.changes],
   );
   const unstagedChanges = useMemo(
     () =>
-      gitStatus?.changes.filter((c: { staged: boolean }) => !c.staged) ?? [],
+      gitStatus?.changes.filter((c: { staged: boolean; path: string }) => !c.staged) ?? [],
     [gitStatus?.changes],
   );
 
