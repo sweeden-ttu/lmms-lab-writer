@@ -30,7 +30,7 @@ English | [中文](README_zh.md) | [日本語](README_ja.md)
 
 ---
 
-![](imgs/demo.webp)
+[![](imgs/demo.webp)](https://youtu.be/rX0FdCEqw0s?si=dXxYfSUVPemeBAOs)
 
 ## Why LMMs-Lab Writer?
 

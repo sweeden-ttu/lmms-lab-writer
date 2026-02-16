@@ -25,7 +25,7 @@
 
 ---
 
-![](imgs/demo.webp)
+[![](imgs/demo.webp)](https://youtu.be/rX0FdCEqw0s?si=dXxYfSUVPemeBAOs)
 
 ## なぜ LMMs-Lab Writer なのか？
 
