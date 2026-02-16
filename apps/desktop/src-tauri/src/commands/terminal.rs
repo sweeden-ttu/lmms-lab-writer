@@ -8,7 +8,15 @@ use tauri::{AppHandle, Emitter, State};
 
 #[cfg(target_os = "windows")]
 fn build_env_path(original: String) -> String {
-    original
+    if !original.trim().is_empty() {
+        return original;
+    }
+
+    if let Ok(system_root) = std::env::var("SystemRoot") {
+        return format!(r"{}\System32;{}", system_root, system_root);
+    }
+
+    r"C:\Windows\System32;C:\Windows".to_string()
 }
 
 #[cfg(target_os = "macos")]
