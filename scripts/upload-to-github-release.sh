@@ -82,6 +82,8 @@ fi
 DMG_PATH="$TAURI_DIR/target/release/bundle/dmg/LMMs-Lab Writer_${VERSION}_${ARCH_SUFFIX}.dmg"
 PKG_PATH="$TAURI_DIR/target/release/bundle/pkg/LMMs-Lab_Writer_${VERSION}_${ARCH_SUFFIX}.pkg"
 NPM_TGZ_PATH="dist/releases/npm/lmms-lab-writer-shared-${VERSION}.tgz"
+DMG_ASSET_NAME="LMMs-Lab.Writer_${VERSION}_${ARCH_SUFFIX}.dmg"
+PKG_ASSET_NAME="LMMs-Lab_Writer_${VERSION}_${ARCH_SUFFIX}.pkg"
 
 for file in "$DMG_PATH" "$PKG_PATH"; do
   if [ ! -f "$file" ]; then
@@ -91,7 +93,7 @@ for file in "$DMG_PATH" "$PKG_PATH"; do
   fi
 done
 
-ASSETS=("$DMG_PATH" "$PKG_PATH")
+ASSETS=("${DMG_PATH}#${DMG_ASSET_NAME}" "${PKG_PATH}#${PKG_ASSET_NAME}")
 if [ -f "$NPM_TGZ_PATH" ]; then
   ASSETS+=("$NPM_TGZ_PATH")
 fi
@@ -126,4 +128,3 @@ gh release upload "$TAG" "${ASSETS[@]}" --repo "$REPO" --clobber
 
 echo "✓ GitHub release upload complete"
 echo "Release URL: https://github.com/$REPO/releases/tag/$TAG"
-

@@ -1,7 +1,6 @@
 #!/bin/bash
 set -euo pipefail
 
-BLOB_TOKEN="vercel_blob_rw_uv96NtHsMy3QxWCo_A5hCZzfbYY2kMZAkeITLHokl1g3PhI"
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TAURI_DIR="$PROJECT_ROOT/apps/desktop/src-tauri"
 VERSION="$(node -p "require('$TAURI_DIR/tauri.conf.json').version")"
@@ -15,8 +14,11 @@ PKG_PATH="$TAURI_DIR/target/release/bundle/pkg/LMMs-Lab_Writer_${VERSION}_${ARCH
 DMG_PATH="$TAURI_DIR/target/release/bundle/dmg/LMMs-Lab Writer_${VERSION}_${ARCH_SUFFIX}.dmg"
 APP_PATH="$TAURI_DIR/target/release/bundle/macos/LMMs-Lab Writer.app"
 RELEASE_TAG="v${VERSION}"
+RELEASE_URL="https://github.com/EvolvingLMMs-Lab/lmms-lab-writer/releases/tag/${RELEASE_TAG}"
+DMG_ASSET_NAME="LMMs-Lab.Writer_${VERSION}_${ARCH_SUFFIX}.dmg"
+PKG_ASSET_NAME="LMMs-Lab_Writer_${VERSION}_${ARCH_SUFFIX}.pkg"
 
-UPLOAD_GITHUB_RELEASE="${PUBLISH_GITHUB_RELEASE:-0}"
+UPLOAD_GITHUB_RELEASE="${PUBLISH_GITHUB_RELEASE:-1}"
 CREATE_GITHUB_RELEASE="${CREATE_GITHUB_RELEASE:-0}"
 
 while [ $# -gt 0 ]; do
@@ -28,13 +30,16 @@ while [ $# -gt 0 ]; do
       UPLOAD_GITHUB_RELEASE=1
       CREATE_GITHUB_RELEASE=1
       ;;
+    --no-github-release)
+      UPLOAD_GITHUB_RELEASE=0
+      ;;
     -h|--help)
-      echo "Usage: ./scripts/release.sh [--github-release] [--create-github-release]"
+      echo "Usage: ./scripts/release.sh [--github-release] [--create-github-release] [--no-github-release]"
       exit 0
       ;;
     *)
       echo "Unknown option: $1"
-      echo "Usage: ./scripts/release.sh [--github-release] [--create-github-release]"
+      echo "Usage: ./scripts/release.sh [--github-release] [--create-github-release] [--no-github-release]"
       exit 1
       ;;
   esac
@@ -48,20 +53,16 @@ echo ""
 
 cd "$PROJECT_ROOT"
 
-echo "[1/6] Building Tauri app..."
+echo "[1/5] Building Tauri app..."
 pnpm tauri:build
 
 echo ""
-echo "[2/6] Building DMG and PKG installers..."
+echo "[2/5] Building DMG and PKG installers..."
 ./scripts/build-dmg.sh
 ./scripts/build-pkg.sh
 
 echo ""
-echo "[3/6] Uploading to Vercel Blob..."
-BLOB_READ_WRITE_TOKEN="$BLOB_TOKEN" ./scripts/upload-to-blob.sh
-
-echo ""
-echo "[4/6] Uploading to GitHub Release (optional)..."
+echo "[3/5] Uploading to GitHub Release..."
 if [ "$UPLOAD_GITHUB_RELEASE" = "1" ]; then
   GH_ARGS=()
   if [ "$CREATE_GITHUB_RELEASE" = "1" ]; then
@@ -69,11 +70,11 @@ if [ "$UPLOAD_GITHUB_RELEASE" = "1" ]; then
   fi
   ./scripts/upload-to-github-release.sh "${GH_ARGS[@]}"
 else
-  echo "Skipped. Use --github-release (or PUBLISH_GITHUB_RELEASE=1) to enable."
+  echo "Skipped. This disables distribution artifacts upload."
 fi
 
 echo ""
-echo "[5/6] Updating Homebrew cask..."
+echo "[4/5] Updating Homebrew cask..."
 NEW_SHA=$(shasum -a 256 "$PKG_PATH" | awk '{print $1}')
 cd /tmp
 rm -rf homebrew-tap
@@ -86,7 +87,7 @@ git push
 cd "$PROJECT_ROOT"
 
 echo ""
-echo "[6/6] Opening app bundle..."
+echo "[5/5] Opening app bundle..."
 open "$APP_PATH"
 
 echo ""
@@ -95,13 +96,14 @@ echo "✓ Release complete!"
 echo "=========================================="
 echo ""
 echo "Downloads:"
-echo "  DMG: https://uv96nthsmy3qxwco.public.blob.vercel-storage.com/LMMs-Lab%20Writer_${VERSION}_${ARCH_SUFFIX}.dmg"
-echo "  PKG: https://uv96nthsmy3qxwco.public.blob.vercel-storage.com/LMMs-Lab_Writer_${VERSION}_${ARCH_SUFFIX}.pkg"
+echo "  Release: ${RELEASE_URL}"
+echo "  DMG: https://github.com/EvolvingLMMs-Lab/lmms-lab-writer/releases/download/${RELEASE_TAG}/${DMG_ASSET_NAME}"
+echo "  PKG: https://github.com/EvolvingLMMs-Lab/lmms-lab-writer/releases/download/${RELEASE_TAG}/${PKG_ASSET_NAME}"
 echo "  Homebrew: brew install --cask EvolvingLMMs-Lab/tap/lmms-lab-writer"
 echo ""
 echo "GitHub Release:"
 echo "  Tag: ${RELEASE_TAG}"
-echo "  URL: https://github.com/EvolvingLMMs-Lab/lmms-lab-writer/releases/tag/${RELEASE_TAG}"
+echo "  URL: ${RELEASE_URL}"
 echo "  Upload (existing release): ./scripts/upload-to-github-release.sh"
 echo "  Upload (create if missing): ./scripts/upload-to-github-release.sh --create"
 echo ""

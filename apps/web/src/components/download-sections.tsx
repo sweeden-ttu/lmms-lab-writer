@@ -24,19 +24,18 @@ const GPU_SPRING = {
   mass: 0.5,
 } as const;
 
-const BLOB_URL = "https://uv96nthsmy3qxwco.public.blob.vercel-storage.com";
 export const RELEASE_VERSION = "0.1.0";
+const RELEASE_BASE_URL = "https://github.com/EvolvingLMMs-Lab/lmms-lab-writer/releases";
+const RELEASE_TAG = `v${RELEASE_VERSION}`;
+const RELEASE_PAGE_URL = `${RELEASE_BASE_URL}/tag/${RELEASE_TAG}`;
+const RELEASE_DOWNLOAD_BASE_URL = `${RELEASE_BASE_URL}/download/${RELEASE_TAG}`;
 
 const macArmPkgFile = `LMMs-Lab_Writer_${RELEASE_VERSION}_aarch64.pkg`;
-const macArmDmgFile = `LMMs-Lab Writer_${RELEASE_VERSION}_aarch64.dmg`;
-const macIntelPkgFile = `LMMs-Lab_Writer_${RELEASE_VERSION}_x64.pkg`;
-const macIntelDmgFile = `LMMs-Lab Writer_${RELEASE_VERSION}_x64.dmg`;
-const windowsExeFile = `LMMs-Lab Writer_${RELEASE_VERSION}_x64-setup.exe`;
-const windowsMsiFile = `LMMs-Lab Writer_${RELEASE_VERSION}_x64_en-US.msi`;
+const macArmDmgFile = `LMMs-Lab.Writer_${RELEASE_VERSION}_aarch64.dmg`;
 const npmTarballFile = `lmms-lab-writer-shared-${RELEASE_VERSION}.tgz`;
 
-function blobUrl(filename: string): string {
-  return `${BLOB_URL}/${encodeURIComponent(filename)}`;
+function releaseAssetUrl(filename: string): string {
+  return `${RELEASE_DOWNLOAD_BASE_URL}/${encodeURIComponent(filename)}`;
 }
 
 type Platform = "macOS" | "Windows" | "Linux" | "unknown";
@@ -59,28 +58,21 @@ const platforms = {
         label: "DMG Bundle",
         sublabel: "Apple Silicon (M1/M2/M3/M4)",
         file: macArmDmgFile,
-        url: blobUrl(macArmDmgFile),
+        url: releaseAssetUrl(macArmDmgFile),
         arch: "arm64" as const,
       },
       {
         label: "PKG Installer",
         sublabel: "Apple Silicon (M1/M2/M3/M4)",
         file: macArmPkgFile,
-        url: blobUrl(macArmPkgFile),
+        url: releaseAssetUrl(macArmPkgFile),
         arch: "arm64" as const,
       },
       {
-        label: "DMG Bundle",
-        sublabel: "Intel (x64)",
-        file: macIntelDmgFile,
-        url: blobUrl(macIntelDmgFile),
-        arch: "x64" as const,
-      },
-      {
-        label: "PKG Installer",
-        sublabel: "Intel (x64)",
-        file: macIntelPkgFile,
-        url: blobUrl(macIntelPkgFile),
+        label: "GitHub Release",
+        sublabel: "Intel (x64) — check latest assets",
+        file: `${RELEASE_TAG} release page`,
+        url: RELEASE_PAGE_URL,
         arch: "x64" as const,
       },
     ],
@@ -90,17 +82,10 @@ const platforms = {
     icon: Monitor,
     variants: [
       {
-        label: "Windows Installer",
-        sublabel: "64-bit (exe)",
-        file: windowsExeFile,
-        url: blobUrl(windowsExeFile),
-        arch: "unknown" as const,
-      },
-      {
-        label: "Windows MSI",
-        sublabel: "64-bit (msi)",
-        file: windowsMsiFile,
-        url: blobUrl(windowsMsiFile),
+        label: "GitHub Release",
+        sublabel: "Check latest Windows assets",
+        file: `${RELEASE_TAG} release page`,
+        url: RELEASE_PAGE_URL,
         arch: "unknown" as const,
       },
     ],
@@ -270,6 +255,13 @@ export function DownloadSection({ locale = DEFAULT_LOCALE }: { locale?: Locale }
             </span>
           )}
         </div>
+        <p className="text-xs text-muted mb-4">
+          Downloads are now served via{" "}
+          <Link href={RELEASE_PAGE_URL} target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">
+            GitHub Releases
+          </Link>
+          .
+        </p>
 
         <div className="space-y-4">
           {recommendedVariants.map((variant) => (
@@ -382,7 +374,7 @@ brew install --cask lmms-lab-writer`}
 
 export function NpmPackageSection({ locale = DEFAULT_LOCALE }: { locale?: Locale }) {
   const messages = getMessages(locale).download;
-  const packageUrl = blobUrl(npmTarballFile);
+  const packageUrl = releaseAssetUrl(npmTarballFile);
 
   return (
     <FadeIn className="mt-10 pt-8 border-t border-border max-w-2xl">
@@ -445,8 +437,8 @@ export function InstallationSection({ locale = DEFAULT_LOCALE }: { locale?: Loca
             <li>{messages.dmgStep2}</li>
           </ol>
           <pre className="bg-white p-3 overflow-x-auto border border-border text-xs">
-            {`xattr -cr ~/Downloads/LMMs-Lab\\ Writer_*.dmg
-hdiutil attach ~/Downloads/LMMs-Lab\\ Writer_*.dmg
+            {`xattr -cr ~/Downloads/LMMs-Lab*.dmg
+hdiutil attach ~/Downloads/LMMs-Lab*.dmg
 cp -R "/Volumes/LMMs-Lab Writer/LMMs-Lab Writer.app" /Applications/
 xattr -cr "/Applications/LMMs-Lab Writer.app"
 hdiutil detach "/Volumes/LMMs-Lab Writer"`}
