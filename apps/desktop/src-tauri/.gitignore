@@ -1,7 +1,10 @@
 # Rust build artifacts
 /target/
-/target-check*/
+/target-*/
 /temp-check-dir/
 
 # Generated files
 gen/schemas/
+
+# DMG build artifacts
+dmg-background.png

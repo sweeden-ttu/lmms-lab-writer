@@ -530,17 +530,18 @@ pub async fn latex_synctex_edit(
     let decode_bytes = |bytes: &[u8]| -> String {
         // Try UTF-8 first
         if let Ok(s) = String::from_utf8(bytes.to_vec()) {
-            return s;
-        }
-        // On Windows with CJK locale, command output is often GBK-encoded
-        #[cfg(target_os = "windows")]
-        {
-            let (decoded, _, _) = encoding_rs::GBK.decode(bytes);
-            return decoded.into_owned();
-        }
-        #[cfg(not(target_os = "windows"))]
-        {
-            String::from_utf8_lossy(bytes).into_owned()
+            s
+        } else {
+            // On Windows with CJK locale, command output is often GBK-encoded
+            #[cfg(target_os = "windows")]
+            {
+                let (decoded, _, _) = encoding_rs::GBK.decode(bytes);
+                decoded.into_owned()
+            }
+            #[cfg(not(target_os = "windows"))]
+            {
+                String::from_utf8_lossy(bytes).into_owned()
+            }
         }
     };
 

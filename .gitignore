@@ -15,16 +15,20 @@ out
 .env
 .env.local
 .env.*.local
+.env*.local
 
 # IDE
 .vscode
 .idea
 *.swp
 *.swo
+*.code-workspace
 
 # OS
 .DS_Store
 Thumbs.db
+Desktop.ini
+ehthumbs.db
 
 # Logs
 *.log
@@ -48,21 +52,38 @@ coverage
 *.synctex.gz
 *.toc
 
-# Claude memory (local only)
+# Claude / AI agent memory (local only)
 CLAUDE.md
+.agent/
+.cursor/
+
+# Vercel
 .vercel
-.env*.local
 
 # Marketing assets (local only)
 marketing-assets/
 apps/video/out/
 *.local.json
-supabase/
-.agent/
 
-# Local desktop Rust check artifacts
-apps/desktop/src-tauri/target-check*/
+# Supabase local
+supabase/
+apps/web/supabase/.temp/
+
+# Rust build artifacts (all target-* variants)
+apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/target-*/
 apps/desktop/src-tauri/temp-check-dir/
 
+# Temporary directories
 tmp*/
 .tmp*/
+tmp-cargo-*/
+
+# Lint output
+lint_output.txt
+
+# Test screenshots (generated)
+test-screenshots/
+
+# DMG build artifacts
+apps/desktop/src-tauri/dmg-background.png

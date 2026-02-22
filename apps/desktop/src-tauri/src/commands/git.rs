@@ -922,7 +922,10 @@ mod tests {
 
         assert_eq!(plan.program, "gh");
         assert_eq!(plan.args, GH_AUTH_LOGIN_ARGS.as_slice());
-        assert_eq!(plan.args.join(" "), GH_AUTH_LOGIN_COMMAND);
+        assert_eq!(
+            format!("{} {}", plan.program, plan.args.join(" ")),
+            GH_AUTH_LOGIN_COMMAND
+        );
         assert!(!plan.hide_outer_window);
     }
 }
