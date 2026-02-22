@@ -1,15 +1,12 @@
-name: Build
+name: Release
 
 on:
   push:
-    branches: [main]
     tags: ["v*"]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 concurrency:
-  group: build-${{ github.ref }}
+  group: release-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -93,64 +90,6 @@ jobs:
           path: |
             apps/desktop/src-tauri/target/**/release/bundle/**
           retention-days: 7
-
-  build-tauri-ci:
-    name: CI Build (${{ matrix.name }})
-    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: Linux
-            os: ubuntu-latest
-            target: ""
-          - name: macOS (ARM64)
-            os: macos-latest
-            target: aarch64-apple-darwin
-          - name: Windows
-            os: windows-latest
-            target: ""
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
-
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: apps/desktop/src-tauri
-
-      - name: Install system dependencies (Linux)
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
-
-      - name: Prepare macOS bundle tools
-        if: startsWith(matrix.os, 'macos')
-        shell: bash
-        run: |
-          DEVELOPER_BIN="$(xcode-select -p)/usr/bin"
-          echo "$DEVELOPER_BIN" >> "$GITHUB_PATH"
-          echo "Using Xcode developer tools from: $DEVELOPER_BIN"
-          xcrun --find SetFile
-          xcrun --find Rez
-          command -v hdiutil
-          command -v osascript
-
-      - run: pnpm install --frozen-lockfile
-
-      - name: Build Tauri app
-        run: pnpm --filter @lmms-lab/writer-desktop tauri build --ci -v ${{ matrix.target && format('--target {0}', matrix.target) }}
 
   build-aur-package:
     name: Prepare AUR Package Files
