@@ -25,7 +25,7 @@
 
 ---
 
-![](imgs/demo.webp)
+[![](imgs/demo.webp)](https://www.bilibili.com/video/BV1JpFQzbEL4/?share_source=copy_web&vd_source=d485f09c61c71104d778f222a1872b9d)
 
 ## 为什么选择 LMMs-Lab Writer？
 

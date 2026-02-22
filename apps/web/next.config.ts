@@ -7,9 +7,6 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: process.env.VERCEL === "1",
   },
-  eslint: {
-    ignoreDuringBuilds: process.env.VERCEL === "1",
-  },
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [

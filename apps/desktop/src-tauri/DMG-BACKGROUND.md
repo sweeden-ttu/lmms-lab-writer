@@ -65,6 +65,8 @@ The DMG settings are configured in `tauri.conf.json`:
 }
 ```
 
+Note: the DMG `background` path is resolved relative to the Tauri config directory (`apps/desktop/src-tauri`), so it should be `dmg-background.png` (without an extra `src-tauri/` prefix).
+
 ## Design System Compliance
 
 Colors follow the monochrome design system:

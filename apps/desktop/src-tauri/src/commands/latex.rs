@@ -1460,3 +1460,120 @@ pub async fn latex_detect_main_file(
         ),
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn get_common_paths_returns_non_empty() {
+        let paths = get_common_paths("pdflatex");
+        assert!(!paths.is_empty());
+    }
+
+    #[test]
+    fn get_common_paths_all_contain_compiler_name() {
+        let paths = get_common_paths("xelatex");
+        for path in &paths {
+            assert!(
+                path.contains("xelatex"),
+                "path '{}' should contain compiler name",
+                path
+            );
+        }
+    }
+
+    #[test]
+    fn has_any_compiler_all_unavailable() {
+        let status = LaTeXCompilersStatus {
+            pdflatex: CompilerInfo {
+                name: "pdflatex".into(),
+                path: None,
+                available: false,
+                version: None,
+            },
+            xelatex: CompilerInfo {
+                name: "xelatex".into(),
+                path: None,
+                available: false,
+                version: None,
+            },
+            lualatex: CompilerInfo {
+                name: "lualatex".into(),
+                path: None,
+                available: false,
+                version: None,
+            },
+            latexmk: CompilerInfo {
+                name: "latexmk".into(),
+                path: None,
+                available: false,
+                version: None,
+            },
+        };
+        assert!(!has_any_compiler(&status));
+    }
+
+    #[test]
+    fn has_any_compiler_one_available() {
+        let status = LaTeXCompilersStatus {
+            pdflatex: CompilerInfo {
+                name: "pdflatex".into(),
+                path: Some("/usr/bin/pdflatex".into()),
+                available: true,
+                version: Some("3.14".into()),
+            },
+            xelatex: CompilerInfo {
+                name: "xelatex".into(),
+                path: None,
+                available: false,
+                version: None,
+            },
+            lualatex: CompilerInfo {
+                name: "lualatex".into(),
+                path: None,
+                available: false,
+                version: None,
+            },
+            latexmk: CompilerInfo {
+                name: "latexmk".into(),
+                path: None,
+                available: false,
+                version: None,
+            },
+        };
+        assert!(has_any_compiler(&status));
+    }
+
+    #[test]
+    fn compiler_info_serialization_roundtrip() {
+        let info = CompilerInfo {
+            name: "pdflatex".into(),
+            path: Some("/usr/bin/pdflatex".into()),
+            available: true,
+            version: Some("3.14".into()),
+        };
+        let json = serde_json::to_string(&info).unwrap();
+        let deserialized: CompilerInfo = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized.name, info.name);
+        assert_eq!(deserialized.path, info.path);
+        assert_eq!(deserialized.available, info.available);
+        assert_eq!(deserialized.version, info.version);
+    }
+
+    #[test]
+    fn compilation_result_serialization_roundtrip() {
+        let result = CompilationResult {
+            success: true,
+            exit_code: Some(0),
+            pdf_path: Some("/tmp/main.pdf".into()),
+            error: None,
+        };
+        let json = serde_json::to_string(&result).unwrap();
+        let deserialized: CompilationResult = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized.success, result.success);
+        assert_eq!(deserialized.exit_code, result.exit_code);
+        assert_eq!(deserialized.pdf_path, result.pdf_path);
+        assert_eq!(deserialized.error, result.error);
+    }
+}

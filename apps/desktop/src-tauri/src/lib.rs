@@ -145,3 +145,51 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn parse_url(s: &str) -> url::Url {
+        url::Url::parse(s).unwrap()
+    }
+
+    #[test]
+    fn external_https_url_is_external() {
+        assert!(is_external_url(&parse_url("https://example.com"), 3000));
+    }
+
+    #[test]
+    fn localhost_same_port_is_not_external() {
+        assert!(!is_external_url(&parse_url("http://localhost:3000"), 3000));
+    }
+
+    #[test]
+    fn localhost_different_port_is_external() {
+        assert!(is_external_url(&parse_url("http://localhost:4000"), 3000));
+    }
+
+    #[test]
+    fn tauri_localhost_is_not_external() {
+        assert!(!is_external_url(
+            &parse_url("https://tauri.localhost"),
+            3000
+        ));
+    }
+
+    #[test]
+    fn non_http_scheme_is_not_external() {
+        assert!(!is_external_url(&parse_url("ftp://example.com"), 3000));
+        assert!(!is_external_url(&parse_url("tauri://localhost"), 3000));
+    }
+
+    #[test]
+    fn ip_127_same_port_is_not_external() {
+        assert!(!is_external_url(&parse_url("http://127.0.0.1:3000"), 3000));
+    }
+
+    #[test]
+    fn ip_127_different_port_is_external() {
+        assert!(is_external_url(&parse_url("http://127.0.0.1:4000"), 3000));
+    }
+}

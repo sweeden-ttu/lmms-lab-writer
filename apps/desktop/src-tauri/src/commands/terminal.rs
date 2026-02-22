@@ -8,28 +8,45 @@ use tauri::{AppHandle, Emitter, State};
 
 #[cfg(target_os = "windows")]
 fn build_env_path(original: String) -> String {
-    original
+    if !original.trim().is_empty() {
+        return original;
+    }
+
+    if let Ok(system_root) = std::env::var("SystemRoot") {
+        return format!(r"{}\System32;{}", system_root, system_root);
+    }
+
+    r"C:\Windows\System32;C:\Windows".to_string()
 }
 
 #[cfg(target_os = "macos")]
 fn build_env_path(original: String) -> String {
-    let mut env_path = original;
-    if !env_path.contains("/opt/homebrew/bin") {
-        env_path = format!(
-            "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:{}",
-            env_path
-        );
+    const DEFAULT_PATH: &str = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin";
+
+    if original.trim().is_empty() {
+        return DEFAULT_PATH.to_string();
     }
-    env_path
+
+    if original.contains("/opt/homebrew/bin") {
+        return original;
+    }
+
+    format!("{}:{}", DEFAULT_PATH, original)
 }
 
 #[cfg(target_os = "linux")]
 fn build_env_path(original: String) -> String {
-    let mut env_path = original;
-    if !env_path.contains("/usr/local/bin") {
-        env_path = format!("/usr/local/bin:/usr/bin:/bin:{}", env_path);
+    const DEFAULT_PATH: &str = "/usr/local/bin:/usr/bin:/bin";
+
+    if original.trim().is_empty() {
+        return DEFAULT_PATH.to_string();
     }
-    env_path
+
+    if original.contains("/usr/local/bin") {
+        return original;
+    }
+
+    format!("{}:{}", DEFAULT_PATH, original)
 }
 
 pub struct PtyInstance {
@@ -320,5 +337,116 @@ pub async fn kill_pty(state: State<'_, PtyState>, id: String) -> Result<(), Stri
         Ok(())
     } else {
         Err(format!("PTY instance not found: {}", id))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use std::path::PathBuf;
+
+    fn unique_temp_file_path(prefix: &str) -> PathBuf {
+        std::env::temp_dir().join(format!("{}-{}", prefix, uuid::Uuid::new_v4()))
+    }
+
+    fn create_temp_file(prefix: &str) -> PathBuf {
+        let path = unique_temp_file_path(prefix);
+        fs::write(&path, b"test shell binary").expect("failed to create temp file");
+        path
+    }
+
+    #[test]
+    fn normalize_shell_trims_whitespace() {
+        assert_eq!(normalize_shell("  /bin/bash  "), "/bin/bash");
+    }
+
+    #[test]
+    fn normalize_shell_removes_quotes() {
+        assert_eq!(normalize_shell("\"powershell.exe\""), "powershell.exe");
+    }
+
+    #[test]
+    fn normalize_shell_clean_input_passthrough() {
+        assert_eq!(normalize_shell("/bin/zsh"), "/bin/zsh");
+    }
+
+    #[test]
+    fn normalize_shell_empty_quotes_returns_empty() {
+        assert_eq!(normalize_shell("\"\""), "");
+    }
+
+    #[test]
+    fn is_executable_available_rejects_empty_input() {
+        assert!(!is_executable_available("   "));
+    }
+
+    #[test]
+    fn is_executable_available_accepts_existing_absolute_file() {
+        let file_path = create_temp_file("terminal-exec-available");
+        let file_str = file_path.to_string_lossy().to_string();
+
+        assert!(is_executable_available(&file_str));
+
+        fs::remove_file(&file_path).expect("failed to cleanup temp file");
+    }
+
+    #[test]
+    fn resolve_shell_uses_existing_preferred_path() {
+        let file_path = create_temp_file("terminal-resolve-shell");
+        let file_str = file_path.to_string_lossy().to_string();
+
+        assert_eq!(resolve_shell(Some(format!("\"{}\"", file_str))), file_str);
+
+        fs::remove_file(&file_path).expect("failed to cleanup temp file");
+    }
+
+    #[test]
+    fn resolve_shell_falls_back_for_missing_preferred_path() {
+        let missing_path = unique_temp_file_path("terminal-missing-shell");
+        let missing_str = missing_path.to_string_lossy().to_string();
+
+        assert_eq!(resolve_shell(Some(missing_str)), get_default_shell());
+    }
+
+    #[test]
+    fn build_env_path_returns_non_empty() {
+        let result = build_env_path(String::new());
+        assert!(!result.is_empty());
+    }
+
+    #[test]
+    fn build_env_path_contains_expected_components() {
+        let result = build_env_path("/existing/path".to_string());
+        assert!(result.contains("/existing/path"));
+
+        #[cfg(target_os = "macos")]
+        assert!(result.contains("/opt/homebrew/bin"));
+
+        #[cfg(target_os = "linux")]
+        assert!(result.contains("/usr/local/bin"));
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn build_env_path_keeps_non_empty_windows_path() {
+        let original = r"C:\Tools;C:\Windows\System32".to_string();
+        assert_eq!(build_env_path(original.clone()), original);
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn build_env_path_empty_uses_macos_defaults_without_trailing_separator() {
+        let result = build_env_path(String::new());
+        assert_eq!(result, "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin");
+        assert!(!result.ends_with(':'));
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn build_env_path_empty_uses_linux_defaults_without_trailing_separator() {
+        let result = build_env_path(String::new());
+        assert_eq!(result, "/usr/local/bin:/usr/bin:/bin");
+        assert!(!result.ends_with(':'));
     }
 }
