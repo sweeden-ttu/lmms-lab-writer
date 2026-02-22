@@ -731,6 +731,10 @@ const GH_AUTH_LOGIN_MACOS_OSASCRIPT_ARGS: [&str; 4] = [
     "tell application \"Terminal\" to do script \"gh auth login --web --git-protocol https --hostname github.com\"",
 ];
 
+// In normal single-target builds (e.g. Windows CI/local builds), only one variant is
+// constructed by `cfg(...)` branches. The other variants are exercised by cross-platform
+// unit tests and other target builds.
+#[cfg_attr(not(test), allow(dead_code))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum GhAuthLoginPlatform {
     Windows,
