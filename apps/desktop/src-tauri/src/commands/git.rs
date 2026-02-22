@@ -712,7 +712,8 @@ async fn run_gh_in(cwd: &str, args: &[&str]) -> Result<String, String> {
     }
 }
 
-const GH_AUTH_LOGIN_COMMAND: &str = "gh auth login --web --git-protocol https --hostname github.com";
+const GH_AUTH_LOGIN_COMMAND: &str =
+    "gh auth login --web --git-protocol https --hostname github.com";
 const GH_AUTH_LOGIN_ARGS: [&str; 7] = [
     "auth",
     "login",
