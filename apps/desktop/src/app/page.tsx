@@ -24,7 +24,7 @@ import { GitSidebarPanel } from "@/components/editor/sidebar-git-panel";
 import { GitHubPublishDialog } from "@/components/editor/github-publish-dialog";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { motion, AnimatePresence, useReducedMotion, type PanInfo } from "framer-motion";
-import { UserDropdown, LoginCodeModal } from "@/components/auth";
+import { LoginCodeModal } from "@/components/auth";
 import {
   useLatexSettings,
   useLatexCompiler,
@@ -2823,8 +2823,8 @@ The AI assistant will read and update this file during compilation.
                     <button
                       onClick={() => setShowLatexSettings(true)}
                       className="h-8 w-8 border border-border bg-background text-foreground hover:bg-accent-hover hover:border-border-dark transition-colors flex items-center justify-center"
-                      title="LaTeX Settings"
-                      aria-label="LaTeX Settings"
+                      title="Settings"
+                      aria-label="Settings"
                     >
                       <GearIcon className="size-4" />
                     </button>
@@ -2832,23 +2832,6 @@ The AI assistant will read and update this file during compilation.
                 </>
               )}
 
-              {!auth.loading && (
-                <>
-                  <span className="text-border text-lg select-none">/</span>
-                  {auth.profile ? (
-                    <UserDropdown profile={auth.profile} />
-                  ) : (
-                    <button
-                      onClick={() => {
-                        setShowLoginCodeModal(true);
-                      }}
-                      className="h-8 px-3 text-sm border-2 border-foreground bg-background text-foreground shadow-[3px_3px_0_0_var(--foreground)] hover:shadow-[1px_1px_0_0_var(--foreground)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all flex items-center"
-                    >
-                      Login
-                    </button>
-                  )}
-                </>
-              )}
             </div>
           </div>
         </header>
@@ -3216,6 +3199,15 @@ The AI assistant will read and update this file during compilation.
         editorSettings={editorSettings.settings}
         onUpdateEditorSettings={editorSettings.updateSettings}
         texFiles={texFiles}
+        authLoading={auth.loading}
+        authConfigured={auth.isConfigured}
+        authProfile={auth.profile}
+        authError={auth.error}
+        onOpenLogin={() => {
+          setShowLatexSettings(false);
+          setShowLoginCodeModal(true);
+        }}
+        onSignOut={auth.signOut}
       />
 
       {mainFileDetectionResult && (
@@ -3266,6 +3258,7 @@ The AI assistant will read and update this file during compilation.
           }
         }}
       />
+
     </div>
   );
 }
