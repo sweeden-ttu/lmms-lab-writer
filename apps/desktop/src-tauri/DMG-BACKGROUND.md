@@ -55,7 +55,7 @@ The DMG settings are configured in `tauri.conf.json`:
   "bundle": {
     "macOS": {
       "dmg": {
-        "background": "dmg-background.png",
+        "background": "src-tauri/dmg-background.png",
         "windowSize": { "width": 660, "height": 400 },
         "appPosition": { "x": 180, "y": 220 },
         "applicationFolderPosition": { "x": 480, "y": 220 }
@@ -64,6 +64,8 @@ The DMG settings are configured in `tauri.conf.json`:
   }
 }
 ```
+
+Note: the DMG `background` path is resolved from the Tauri CLI process working directory (for this repo, `apps/desktop` when running `pnpm tauri:build`), so it must include the `src-tauri/` prefix in CI.
 
 ## Design System Compliance
 
