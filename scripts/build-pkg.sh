@@ -12,8 +12,14 @@ BUNDLE_ID="com.lmms-lab.writer"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 TAURI_DIR="$PROJECT_ROOT/apps/desktop/src-tauri"
+TAURI_TARGET_TRIPLE="${TAURI_TARGET_TRIPLE:-}"
+if [ -n "$TAURI_TARGET_TRIPLE" ]; then
+    TARGET_DIR="$TAURI_DIR/target/$TAURI_TARGET_TRIPLE/release"
+else
+    TARGET_DIR="$TAURI_DIR/target/release"
+fi
 VERSION="$(node -p "require('$TAURI_DIR/tauri.conf.json').version")"
-BUNDLE_DIR="$TAURI_DIR/target/release/bundle"
+BUNDLE_DIR="$TARGET_DIR/bundle"
 APP_PATH="$BUNDLE_DIR/macos/$APP_NAME.app"
 PKG_SCRIPTS="$SCRIPT_DIR/pkg"
 OUTPUT_DIR="$BUNDLE_DIR/pkg"
