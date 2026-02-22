@@ -10,6 +10,7 @@ import {
   XIcon,
 } from "@phosphor-icons/react";
 import { useTheme } from "next-themes";
+import type { UserProfile } from "@/lib/auth";
 import {
   LaTeXSettings,
   DEFAULT_LATEX_SETTINGS,
@@ -33,6 +34,12 @@ interface LaTeXSettingsDialogProps {
   editorSettings: EditorSettings;
   onUpdateEditorSettings: (updates: Partial<EditorSettings>) => void;
   texFiles: string[];
+  authLoading: boolean;
+  authConfigured: boolean;
+  authProfile: UserProfile | null;
+  authError: string | null;
+  onOpenLogin: () => void;
+  onSignOut: () => Promise<void>;
 }
 
 // Section header component for visual grouping - editorial style
@@ -154,9 +161,16 @@ export function LaTeXSettingsDialog({
   editorSettings,
   onUpdateEditorSettings,
   texFiles,
+  authLoading,
+  authConfigured,
+  authProfile,
+  authError,
+  onOpenLogin,
+  onSignOut,
 }: LaTeXSettingsDialogProps) {
   const [activeTab, setActiveTab] = useState<string>("build");
   const canResetActiveTab = activeTab === "build" || activeTab === "editor";
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const handleResetLatexSettings = useCallback(() => {
     onUpdateSettings(DEFAULT_LATEX_SETTINGS);
@@ -165,6 +179,15 @@ export function LaTeXSettingsDialog({
   const handleResetEditorSettings = useCallback(() => {
     onUpdateEditorSettings(DEFAULT_EDITOR_SETTINGS);
   }, [onUpdateEditorSettings]);
+
+  const handleSignOut = useCallback(async () => {
+    try {
+      setIsSigningOut(true);
+      await onSignOut();
+    } finally {
+      setIsSigningOut(false);
+    }
+  }, [onSignOut]);
 
   return (
     <Dialog.Root open={open} onOpenChange={(v) => !v && onClose()}>
@@ -849,18 +872,70 @@ export function LaTeXSettingsDialog({
                     Testing
                   </span>
                   <span className="text-sm font-medium text-foreground-secondary">
-                    Login Feature Is Temporarily Hidden
+                    Login Testing
                   </span>
                 </div>
                 <p className="text-sm text-muted-foreground leading-6">
-                  Desktop account login is currently under testing. It may not work reliably on all
-                  operating systems (especially macOS), so the toolbar login entry has been
-                  temporarily removed.
+                  Desktop login is experimental and may not work reliably on all operating systems.
                 </p>
-                <p className="text-xs text-muted mt-3">
-                  The underlying code is kept in the project and will be re-enabled after the flow
-                  is stabilized.
-                </p>
+              </div>
+
+              <div className="border border-border p-4 bg-background">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground-secondary">
+                      {authProfile ? "Signed In" : "Not Signed In"}
+                    </p>
+                    {authLoading ? (
+                      <p className="text-xs text-muted mt-1">Checking account status...</p>
+                    ) : authProfile ? (
+                      <>
+                        <p className="text-sm text-foreground mt-1 truncate">
+                          {authProfile.name || authProfile.email}
+                        </p>
+                        {authProfile.name && (
+                          <p className="text-xs text-muted mt-0.5 truncate">
+                            {authProfile.email}
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-xs text-muted mt-1">
+                        Login is available for testing, but may fail on some systems.
+                      </p>
+                    )}
+                  </div>
+
+                  {authProfile ? (
+                    <button
+                      onClick={() => {
+                        void handleSignOut();
+                      }}
+                      disabled={authLoading || isSigningOut}
+                      className="px-3 py-2 text-sm border border-border hover:border-border-dark hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isSigningOut ? "Signing out..." : "Sign Out"}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={onOpenLogin}
+                      disabled={authLoading || !authConfigured}
+                      className="px-3 py-2 text-sm border-2 border-foreground bg-background text-foreground shadow-[3px_3px_0_0_var(--foreground)] hover:shadow-[1px_1px_0_0_var(--foreground)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-x-0 disabled:hover:translate-y-0 disabled:hover:shadow-[3px_3px_0_0_var(--foreground)]"
+                      title="Login is under testing and may not work reliably on all operating systems (especially macOS)."
+                    >
+                      Login
+                    </button>
+                  )}
+                </div>
+
+                {!authConfigured && (
+                  <p className="text-xs text-red-600 mt-3">
+                    Authentication is not configured in this desktop build.
+                  </p>
+                )}
+                {authError && (
+                  <p className="text-xs text-red-600 mt-2 break-words">{authError}</p>
+                )}
               </div>
             </Tabs.Content>
           </Tabs.Root>

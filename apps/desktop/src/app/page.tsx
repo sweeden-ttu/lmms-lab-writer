@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useTauriDaemon } from "@/lib/tauri";
+import { useAuth } from "@/lib/auth";
 import { useToast } from "@/components/ui/toast";
 import { InputDialog } from "@/components/ui/input-dialog";
 import {
@@ -23,6 +24,7 @@ import { GitSidebarPanel } from "@/components/editor/sidebar-git-panel";
 import { GitHubPublishDialog } from "@/components/editor/github-publish-dialog";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { motion, AnimatePresence, useReducedMotion, type PanInfo } from "framer-motion";
+import { LoginCodeModal } from "@/components/auth";
 import {
   useLatexSettings,
   useLatexCompiler,
@@ -409,6 +411,7 @@ export default function EditorPage() {
       editorSettings.settings.gitAutoFetchIntervalSeconds * 1000,
   });
   const prefersReducedMotion = useReducedMotion();
+  const auth = useAuth();
   const { toast } = useToast();
   const recentProjects = useRecentProjects();
 
@@ -465,6 +468,7 @@ export default function EditorPage() {
   const [opencodePort, setOpencodePort] = useState(4096);
   const [showDisconnectedDialog, setShowDisconnectedDialog] = useState(false);
   const [showLatexSettings, setShowLatexSettings] = useState(false);
+  const [showLoginCodeModal, setShowLoginCodeModal] = useState(false);
   const [pendingOpenCodeMessage, setPendingOpenCodeMessage] = useState<
     string | null
   >(null);
@@ -3195,6 +3199,15 @@ The AI assistant will read and update this file during compilation.
         editorSettings={editorSettings.settings}
         onUpdateEditorSettings={editorSettings.updateSettings}
         texFiles={texFiles}
+        authLoading={auth.loading}
+        authConfigured={auth.isConfigured}
+        authProfile={auth.profile}
+        authError={auth.error}
+        onOpenLogin={() => {
+          setShowLatexSettings(false);
+          setShowLoginCodeModal(true);
+        }}
+        onSignOut={auth.signOut}
       />
 
       {mainFileDetectionResult && (
@@ -3231,6 +3244,20 @@ The AI assistant will read and update this file during compilation.
           error={ghPublishError}
         />
       )}
+
+      <LoginCodeModal
+        isOpen={showLoginCodeModal}
+        onClose={() => setShowLoginCodeModal(false)}
+        onSuccess={async (accessToken) => {
+          if (accessToken) {
+            // Session storage failed, use access token directly
+            await auth.setAuthWithToken(accessToken);
+          } else {
+            // Session was stored properly, refresh normally
+            await auth.refreshAuth();
+          }
+        }}
+      />
 
     </div>
   );
