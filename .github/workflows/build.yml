@@ -2,7 +2,10 @@ name: Build
 
 on:
   push:
+    branches: [main]
     tags: ["v*"]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 concurrency:
@@ -12,6 +15,7 @@ concurrency:
 jobs:
   build-tauri:
     name: Build (${{ matrix.name }})
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch' || !matrix.release_only
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -20,15 +24,19 @@ jobs:
           - name: Linux
             os: ubuntu-latest
             target: ""
+            release_only: false
           - name: macOS (ARM64)
             os: macos-latest
             target: aarch64-apple-darwin
+            release_only: false
           - name: macOS (x64)
             os: macos-15-intel
             target: x86_64-apple-darwin
+            release_only: true
           - name: Windows
             os: windows-latest
             target: ""
+            release_only: false
     steps:
       - uses: actions/checkout@v4
 
@@ -82,6 +90,7 @@ jobs:
         run: ./scripts/build-pkg.sh
 
       - name: Upload artifacts
+        if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
           name: build-${{ matrix.name }}
@@ -89,10 +98,52 @@ jobs:
             apps/desktop/src-tauri/target/**/release/bundle/**
           retention-days: 7
 
+  build-aur-package:
+    name: Prepare AUR Package Files
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: build-tauri
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-Linux
+          path: aur-input
+
+      - name: Generate PKGBUILD and .SRCINFO
+        if: !contains(github.ref_name, '-')
+        run: node scripts/generate-aur-bin-package.mjs --tag ${{ github.ref_name }} --linux-artifacts-dir aur-input --out-dir aur-dist/lmms-lab-writer-bin
+
+      - name: Archive AUR package files
+        if: !contains(github.ref_name, '-')
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p aur-dist
+          tar -czf "aur-dist/lmms-lab-writer-bin-${{ github.ref_name }}-aur.tar.gz" -C aur-dist/lmms-lab-writer-bin .
+
+      - name: Upload AUR package files
+        if: !contains(github.ref_name, '-')
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-AUR
+          path: |
+            aur-dist/lmms-lab-writer-bin/**
+            aur-dist/*.tar.gz
+          retention-days: 7
+
   release-github:
     name: Publish GitHub Release
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-    needs: build-tauri
+    needs:
+      - build-tauri
+      - build-aur-package
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -124,3 +175,5 @@ jobs:
             release-artifacts/**/*.rpm
             release-artifacts/**/*.sig
             release-artifacts/**/*.json
+            release-artifacts/**/PKGBUILD
+            release-artifacts/**/.SRCINFO
