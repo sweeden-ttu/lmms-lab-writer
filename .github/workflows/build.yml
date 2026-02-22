@@ -55,10 +55,22 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
+      - name: Prepare macOS bundle tools
+        if: startsWith(matrix.os, 'macos')
+        shell: bash
+        run: |
+          DEVELOPER_BIN="$(xcode-select -p)/usr/bin"
+          echo "$DEVELOPER_BIN" >> "$GITHUB_PATH"
+          echo "Using Xcode developer tools from: $DEVELOPER_BIN"
+          xcrun --find SetFile
+          xcrun --find Rez
+          command -v hdiutil
+          command -v osascript
+
       - run: pnpm install --frozen-lockfile
 
       - name: Build Tauri app
-        run: pnpm tauri:build ${{ matrix.target && format('-- --target {0}', matrix.target) }}
+        run: pnpm --filter @lmms-lab/writer-desktop tauri build --ci -v ${{ matrix.target && format('--target {0}', matrix.target) }}
 
       - name: Upload artifacts
         if: github.event_name == 'push'
