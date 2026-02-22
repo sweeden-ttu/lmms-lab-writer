@@ -34,7 +34,7 @@
     "macOS": {
       "minimumSystemVersion": "10.15",
       "dmg": {
-        "background": "src-tauri/dmg-background.png",
+        "background": "dmg-background.png",
         "windowSize": {
           "width": 660,
           "height": 400
