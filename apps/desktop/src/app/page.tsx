@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useTauriDaemon } from "@/lib/tauri";
-import { useAuth } from "@/lib/auth";
 import { useToast } from "@/components/ui/toast";
 import { InputDialog } from "@/components/ui/input-dialog";
 import {
@@ -24,7 +23,6 @@ import { GitSidebarPanel } from "@/components/editor/sidebar-git-panel";
 import { GitHubPublishDialog } from "@/components/editor/github-publish-dialog";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { motion, AnimatePresence, useReducedMotion, type PanInfo } from "framer-motion";
-import { UserDropdown, LoginCodeModal } from "@/components/auth";
 import {
   useLatexSettings,
   useLatexCompiler,
@@ -411,7 +409,6 @@ export default function EditorPage() {
       editorSettings.settings.gitAutoFetchIntervalSeconds * 1000,
   });
   const prefersReducedMotion = useReducedMotion();
-  const auth = useAuth();
   const { toast } = useToast();
   const recentProjects = useRecentProjects();
 
@@ -468,7 +465,6 @@ export default function EditorPage() {
   const [opencodePort, setOpencodePort] = useState(4096);
   const [showDisconnectedDialog, setShowDisconnectedDialog] = useState(false);
   const [showLatexSettings, setShowLatexSettings] = useState(false);
-  const [showLoginCodeModal, setShowLoginCodeModal] = useState(false);
   const [pendingOpenCodeMessage, setPendingOpenCodeMessage] = useState<
     string | null
   >(null);
@@ -2823,8 +2819,8 @@ The AI assistant will read and update this file during compilation.
                     <button
                       onClick={() => setShowLatexSettings(true)}
                       className="h-8 w-8 border border-border bg-background text-foreground hover:bg-accent-hover hover:border-border-dark transition-colors flex items-center justify-center"
-                      title="LaTeX Settings"
-                      aria-label="LaTeX Settings"
+                      title="Settings"
+                      aria-label="Settings"
                     >
                       <GearIcon className="size-4" />
                     </button>
@@ -2832,23 +2828,6 @@ The AI assistant will read and update this file during compilation.
                 </>
               )}
 
-              {!auth.loading && (
-                <>
-                  <span className="text-border text-lg select-none">/</span>
-                  {auth.profile ? (
-                    <UserDropdown profile={auth.profile} />
-                  ) : (
-                    <button
-                      onClick={() => {
-                        setShowLoginCodeModal(true);
-                      }}
-                      className="h-8 px-3 text-sm border-2 border-foreground bg-background text-foreground shadow-[3px_3px_0_0_var(--foreground)] hover:shadow-[1px_1px_0_0_var(--foreground)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all flex items-center"
-                    >
-                      Login
-                    </button>
-                  )}
-                </>
-              )}
             </div>
           </div>
         </header>
@@ -3253,19 +3232,6 @@ The AI assistant will read and update this file during compilation.
         />
       )}
 
-      <LoginCodeModal
-        isOpen={showLoginCodeModal}
-        onClose={() => setShowLoginCodeModal(false)}
-        onSuccess={async (accessToken) => {
-          if (accessToken) {
-            // Session storage failed, use access token directly
-            await auth.setAuthWithToken(accessToken);
-          } else {
-            // Session was stored properly, refresh normally
-            await auth.refreshAuth();
-          }
-        }}
-      />
     </div>
   );
 }
