@@ -63,3 +63,6 @@ supabase/
 # Local desktop Rust check artifacts
 apps/desktop/src-tauri/target-check*/
 apps/desktop/src-tauri/temp-check-dir/
+
+tmp*/
+.tmp*/

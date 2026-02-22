@@ -712,6 +712,59 @@ async fn run_gh_in(cwd: &str, args: &[&str]) -> Result<String, String> {
     }
 }
 
+const GH_AUTH_LOGIN_COMMAND: &str = "gh auth login --web --git-protocol https --hostname github.com";
+const GH_AUTH_LOGIN_ARGS: [&str; 7] = [
+    "auth",
+    "login",
+    "--web",
+    "--git-protocol",
+    "https",
+    "--hostname",
+    "github.com",
+];
+const GH_AUTH_LOGIN_WINDOWS_ARGS: [&str; 6] =
+    ["/c", "start", "", "cmd", "/c", GH_AUTH_LOGIN_COMMAND];
+const GH_AUTH_LOGIN_MACOS_OSASCRIPT_ARGS: [&str; 4] = [
+    "-e",
+    "tell application \"Terminal\" to activate",
+    "-e",
+    "tell application \"Terminal\" to do script \"gh auth login --web --git-protocol https --hostname github.com\"",
+];
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum GhAuthLoginPlatform {
+    Windows,
+    MacOs,
+    Unix,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct GhAuthLoginLaunchPlan {
+    program: &'static str,
+    args: &'static [&'static str],
+    hide_outer_window: bool,
+}
+
+fn gh_auth_login_launch_plan(platform: GhAuthLoginPlatform) -> GhAuthLoginLaunchPlan {
+    match platform {
+        GhAuthLoginPlatform::Windows => GhAuthLoginLaunchPlan {
+            program: "cmd",
+            args: &GH_AUTH_LOGIN_WINDOWS_ARGS,
+            hide_outer_window: true,
+        },
+        GhAuthLoginPlatform::MacOs => GhAuthLoginLaunchPlan {
+            program: "osascript",
+            args: &GH_AUTH_LOGIN_MACOS_OSASCRIPT_ARGS,
+            hide_outer_window: false,
+        },
+        GhAuthLoginPlatform::Unix => GhAuthLoginLaunchPlan {
+            program: "gh",
+            args: &GH_AUTH_LOGIN_ARGS,
+            hide_outer_window: false,
+        },
+    }
+}
+
 #[tauri::command]
 pub async fn gh_check() -> Result<GhStatus, String> {
     // Check if gh is installed
@@ -763,19 +816,19 @@ pub async fn gh_auth_login() -> Result<String, String> {
     // Spawn gh auth login in a visible terminal so the user can see the device code
     // and complete the interactive browser-based auth flow.
     #[cfg(target_os = "windows")]
+    let plan = gh_auth_login_launch_plan(GhAuthLoginPlatform::Windows);
+    #[cfg(target_os = "macos")]
+    let plan = gh_auth_login_launch_plan(GhAuthLoginPlatform::MacOs);
+    #[cfg(all(not(target_os = "windows"), not(target_os = "macos")))]
+    let plan = gh_auth_login_launch_plan(GhAuthLoginPlatform::Unix);
+
+    #[cfg(target_os = "windows")]
     {
         use std::os::windows::process::CommandExt;
         const CREATE_NO_WINDOW_FLAG: u32 = 0x08000000;
         // The outer cmd is hidden; `start` creates a new visible console window.
         std::process::Command::new("cmd")
-            .args([
-                "/c",
-                "start",
-                "",
-                "cmd",
-                "/c",
-                "gh auth login --web --git-protocol https --hostname github.com",
-            ])
+            .args(plan.args)
             .creation_flags(CREATE_NO_WINDOW_FLAG)
             .spawn()
             .map_err(|e| e.to_string())?;
@@ -783,16 +836,8 @@ pub async fn gh_auth_login() -> Result<String, String> {
 
     #[cfg(not(target_os = "windows"))]
     {
-        std::process::Command::new("gh")
-            .args([
-                "auth",
-                "login",
-                "--web",
-                "--git-protocol",
-                "https",
-                "--hostname",
-                "github.com",
-            ])
+        std::process::Command::new(plan.program)
+            .args(plan.args)
             .spawn()
             .map_err(|e| e.to_string())?;
     }
@@ -839,4 +884,41 @@ pub async fn gh_create_repo(
     let url = output.trim().to_string();
 
     Ok(GhRepoResult { url, name })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn gh_auth_login_windows_launch_plan_uses_visible_cmd() {
+        let plan = gh_auth_login_launch_plan(GhAuthLoginPlatform::Windows);
+
+        assert_eq!(plan.program, "cmd");
+        assert_eq!(plan.args, GH_AUTH_LOGIN_WINDOWS_ARGS.as_slice());
+        assert!(plan.hide_outer_window);
+    }
+
+    #[test]
+    fn gh_auth_login_macos_launch_plan_uses_terminal_app() {
+        let plan = gh_auth_login_launch_plan(GhAuthLoginPlatform::MacOs);
+
+        assert_eq!(plan.program, "osascript");
+        assert_eq!(plan.args, GH_AUTH_LOGIN_MACOS_OSASCRIPT_ARGS.as_slice());
+        assert!(plan
+            .args
+            .iter()
+            .any(|arg| arg.contains("Terminal") && arg.contains("do script")));
+        assert!(!plan.hide_outer_window);
+    }
+
+    #[test]
+    fn gh_auth_login_unix_launch_plan_runs_gh_directly() {
+        let plan = gh_auth_login_launch_plan(GhAuthLoginPlatform::Unix);
+
+        assert_eq!(plan.program, "gh");
+        assert_eq!(plan.args, GH_AUTH_LOGIN_ARGS.as_slice());
+        assert_eq!(plan.args.join(" "), GH_AUTH_LOGIN_COMMAND);
+        assert!(!plan.hide_outer_window);
+    }
 }
