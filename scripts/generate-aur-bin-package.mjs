@@ -1,3 +1,4 @@
+/* global console */
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -154,7 +155,7 @@ package() {
   mkdir -p "\${workdir}"
 
   bsdtar -xf "\${srcdir}/${sourceFileName}" -C "\${workdir}"
-  data_archive="\$(find "\${workdir}" -maxdepth 1 -type f -name 'data.tar.*' | head -n 1)"
+  data_archive="$(find "\${workdir}" -maxdepth 1 -type f -name 'data.tar.*' | head -n 1)"
   if [[ -z "\${data_archive}" ]]; then
     echo "data.tar.* not found in ${sourceFileName}" >&2
     return 1
