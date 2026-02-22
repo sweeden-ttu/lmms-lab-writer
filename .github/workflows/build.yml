@@ -117,11 +117,11 @@ jobs:
           path: aur-input
 
       - name: Generate PKGBUILD and .SRCINFO
-        if: !contains(github.ref_name, '-')
+        if: ${{ !contains(github.ref_name, '-') }}
         run: node scripts/generate-aur-bin-package.mjs --tag ${{ github.ref_name }} --linux-artifacts-dir aur-input --out-dir aur-dist/lmms-lab-writer-bin
 
       - name: Archive AUR package files
-        if: !contains(github.ref_name, '-')
+        if: ${{ !contains(github.ref_name, '-') }}
         shell: bash
         run: |
           set -euo pipefail
@@ -129,7 +129,7 @@ jobs:
           tar -czf "aur-dist/lmms-lab-writer-bin-${{ github.ref_name }}-aur.tar.gz" -C aur-dist/lmms-lab-writer-bin .
 
       - name: Upload AUR package files
-        if: !contains(github.ref_name, '-')
+        if: ${{ !contains(github.ref_name, '-') }}
         uses: actions/upload-artifact@v4
         with:
           name: build-AUR
