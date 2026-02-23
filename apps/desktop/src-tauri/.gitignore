@@ -5,6 +5,3 @@
 
 # Generated files
 gen/schemas/
-
-# DMG build artifacts
-dmg-background.png

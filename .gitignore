@@ -85,5 +85,3 @@ lint_output.txt
 # Test screenshots (generated)
 test-screenshots/
 
-# DMG build artifacts
-apps/desktop/src-tauri/dmg-background.png
