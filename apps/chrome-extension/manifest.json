@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "LMMs-Lab Writer Course Evaluator",
+  "version": "1.0",
+  "description": "Programmatically evaluates course websites against local content.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "alarms"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ],
+  "action": {
+    "default_title": "Evaluate Course Requirements",
+    "default_popup": "popup.html"
+  }
+}

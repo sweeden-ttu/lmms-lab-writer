@@ -1,3 +1,6 @@
+debug
+target
+target/debug
 # Dependencies
 node_modules
 .pnpm-store
@@ -85,3 +88,4 @@ lint_output.txt
 # Test screenshots (generated)
 test-screenshots/
 
+apps/api-server/target/.rustc_info.json

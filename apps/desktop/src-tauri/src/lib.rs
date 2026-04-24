@@ -1,4 +1,5 @@
 mod commands;
+mod adk_server;
 
 use commands::auth::AuthCallbackStateWrapper;
 use commands::fs::{ProjectState, WatcherState};
@@ -108,6 +109,11 @@ pub fn run() {
         ])
         .setup(|app| {
             let app_handle = app.handle().clone();
+
+            // Spawn ADK local server
+            tauri::async_runtime::spawn(async move {
+                adk_server::start_adk_server().await;
+            });
 
             let webview_url = if cfg!(debug_assertions) {
                 WebviewUrl::External("http://localhost:3000".parse().unwrap())

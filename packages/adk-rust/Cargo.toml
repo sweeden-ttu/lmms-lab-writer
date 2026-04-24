@@ -1,0 +1,15 @@
+[package]
+name = "adk-rust"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1.0", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+regex = "1.10"
+thiserror = "1.0"
+async-trait = "0.1"
+uuid = { version = "1.0", features = ["v4", "serde"] }
+automata = "*"
+# Placeholder for cb-algorithms (not on crates.io yet, will scaffold local module)

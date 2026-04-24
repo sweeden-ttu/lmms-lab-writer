@@ -1,0 +1,268 @@
+{
+  "project": "prd.md",
+  "started_at": "2026-04-24T05:47:18.676256+00:00",
+  "last_updated": "2026-04-24T07:04:13.465175+00:00",
+  "total_iterations": 0,
+  "entries": [
+    {
+      "task_id": "T-001",
+      "title": "Initialize Rust project structure",
+      "iteration": 0,
+      "completed_at": "2026-04-24T05:47:56.395913+00:00",
+      "approach": "Created Cargo.toml with all necessary dependencies (serde, reqwest, tokio, clap, log, anyhow, thiserror), initialized src/main.rs with basic logging setup, and created a comprehensive README.md documenting the project structure and features. Verified the project builds and compiles successfully with cargo.",
+      "learnings": [
+        "Cargo with 2021 edition selected for modern Rust features",
+        "Used reqwest with async/tokio for HTTP client capabilities",
+        "Selected clap for CLI argument parsing with derive macros",
+        "Included log and env_logger for flexible logging configuration",
+        "Added thiserror for better error handling patterns"
+      ],
+      "gotchas": [],
+      "files_created": [
+        "Cargo.toml",
+        "src/main.rs",
+        "README.md"
+      ],
+      "files_modified": [],
+      "test_results": {
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "duration_ms": null
+      },
+      "commit_hash": null
+    },
+    {
+      "task_id": "T-002",
+      "title": "Implement data models",
+      "iteration": 0,
+      "completed_at": "2026-04-24T05:49:11.802382+00:00",
+      "approach": "Created comprehensive serde-compatible structs in src/models.rs for Canvas data: Course, Module, ModuleItem, File, Enrollment, Grades, VideoLink with provider detection, and utility structs for CanvasPayload, User, PayloadMetadata, ExtractionSummary, DownloadStats, and LogEntry. Included unit tests for VideoProvider detection (YouTube, Vimeo, Canvas, Other) and Course serialization. Updated src/main.rs to import the models module.",
+      "learnings": [
+        "Serde derive macros make JSON serialization/deserialization seamless with #[serde(rename, default)]",
+        "VideoProvider enum with from_url() helper provides pattern matching for video source detection",
+        "Optional fields should use Option<T> with #[serde(default)] for flexible payload parsing",
+        "Test coverage for enum variants and serialization ensures data integrity",
+        "Future unused warnings are expected until these models are integrated into parser and operations"
+      ],
+      "gotchas": [
+        "Structs have #[serde(default)] to handle optional/missing fields in JSON payloads",
+        "VideoProvider uses lowercase serialization with #[serde(rename_all)]"
+      ],
+      "files_created": [
+        "src/models.rs"
+      ],
+      "files_modified": [
+        "src/main.rs"
+      ],
+      "test_results": {
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "duration_ms": null
+      },
+      "commit_hash": null
+    },
+    {
+      "task_id": "T-003",
+      "title": "Implement payload parser",
+      "iteration": 0,
+      "completed_at": "2026-04-24T05:51:30.728873+00:00",
+      "approach": "Created src/parser.rs with parse_payload() function that reads JSON from file path, validates file existence, handles JSON parsing errors with proper anyhow Context, and logs discovery of courses and modules. Included validate_payload() to check course structure, get_payload_stats() for extraction metrics, and comprehensive unit tests covering: valid payloads, missing files, invalid JSON, validation checks, and stats calculation. Updated src/main.rs to import parser module.",
+      "learnings": [
+        "anyhow::Context provides detailed error messages with .with_context()",
+        "tempfile crate enables easy test file creation with NamedTempFile",
+        "Logging at each step (debug, info) provides operational visibility",
+        "PayloadStats struct tracks courses, modules, items, and enrollments",
+        "File existence check before reading prevents misleading error messages"
+      ],
+      "gotchas": [
+        "Must explicitly check file.exists() before fs::read_to_string for better error messages",
+        "serde_json::from_str() needs the full JSON payload structure to match CanvasPayload",
+        "Course ID 0 indicates invalid structure and should be rejected"
+      ],
+      "files_created": [
+        "src/parser.rs"
+      ],
+      "files_modified": [
+        "src/main.rs"
+      ],
+      "test_results": {
+        "passed": 13,
+        "failed": 0,
+        "skipped": 0,
+        "duration_ms": null
+      },
+      "commit_hash": null
+    },
+    {
+      "task_id": "T-004",
+      "title": "Implement logging module",
+      "iteration": 0,
+      "completed_at": "2026-04-24T05:57:51.741713+00:00",
+      "approach": "Created src/logger.rs with comprehensive logging functions using lazy_static Mutex for thread-safe operation log storage. Implemented log_startup(), log_operation_start(), log_operation_complete(), log_operation_failed(), log_summary(), and export_logs_json(). Used chrono for timestamp generation and serde for JSON serialization. Added dependency on lazy_static and chrono to Cargo.toml. Implemented 7 unit tests with proper test isolation using setup_test() helper to filter logs by operation name and avoid cross-test contamination.",
+      "learnings": [
+        "lazy_static with Mutex enables thread-safe global state in Rust",
+        "chrono::Local::now().to_rfc3339() provides ISO 8601 timestamps",
+        "Test isolation with global state requires filtering to specific test operations",
+        "OperationStatus enum with serde makes JSON output clean and queryable",
+        "log_operation() is the core function that pushes entries to the thread-safe vector"
+      ],
+      "gotchas": [
+        "Tests need setup_test() to clear logs and filter results, as global OPERATION_LOG persists across tests",
+        "Must derive Serialize/Deserialize on both OperationLog and OperationStatus for serde_json::to_string_pretty()"
+      ],
+      "files_created": [
+        "src/logger.rs"
+      ],
+      "files_modified": [
+        "src/main.rs",
+        "Cargo.toml"
+      ],
+      "test_results": {
+        "passed": 20,
+        "failed": 0,
+        "skipped": 0,
+        "duration_ms": null
+      },
+      "commit_hash": null
+    },
+    {
+      "task_id": "T-005",
+      "title": "Implement file downloader",
+      "iteration": 0,
+      "completed_at": "2026-04-24T06:04:17.702957+00:00",
+      "approach": "Created src/downloader.rs with async HTTP downloader using reqwest and tokio. Implemented download_file() for single files with timeout support, download_module_files() for batch downloads with error handling, and create_directory_structure() for organizing files by course/module. Added cleanup_downloads() for optional maintenance. Included DownloadConfig, DownloadStats structs, and proper error handling with anyhow Context. Updated main.rs with #[tokio::main] for async support. Created 6 unit tests including async test for module downloads, directory creation tests, and stats verification.",
+      "learnings": [
+        "tokio::main macro enables async entry point without manual runtime creation",
+        "#[tokio::test] macro enables async unit tests",
+        "reqwest::Client with timeout prevents hanging on unresponsive servers",
+        "File existence check before download avoids redundant work",
+        "Directory structure course_N/module_N enables clear organization",
+        "Error handling doesn't stop batch operations - failed downloads are logged but processing continues"
+      ],
+      "gotchas": [
+        "Must import tokio::fs::File and AsyncWriteExt for async file operations",
+        "reqwest returns bytes that need to be written asynchronously",
+        "Cleanup_downloads recursively walks directory tree so it handles nested structures"
+      ],
+      "files_created": [
+        "src/downloader.rs"
+      ],
+      "files_modified": [
+        "src/main.rs"
+      ],
+      "test_results": {
+        "passed": 26,
+        "failed": 0,
+        "skipped": 0,
+        "duration_ms": null
+      },
+      "commit_hash": null
+    },
+    {
+      "task_id": "T-006",
+      "title": "Implement directory creation",
+      "iteration": 0,
+      "completed_at": "2026-04-24T06:11:46.667103+00:00",
+      "approach": "Enhanced DownloadConfig struct to include both base_dir (for downloads) and output_dir (for output files), each defaulting to ./downloads and ./output respectively. Implemented initialize_directories() function that creates both directories upfront and logs completion via logger::log_operation_complete(). The function is idempotent - can be called multiple times without error. Added two new unit tests: test_initialize_directories() and test_initialize_directories_idempotent() to verify both directories are created and that the function can be safely called multiple times.",
+      "learnings": [
+        "Idempotent directory operations allow safe initialization at startup",
+        "fs::create_dir_all() safely handles existing directories",
+        "Separating base_dir and output_dir allows flexible organization of downloads vs. generated files",
+        "Initialize_directories() integrates with logger for operation tracking",
+        "HashMap::new() can be used for empty details in log operations"
+      ],
+      "gotchas": [
+        "Must use PathBuf for flexible path composition with .join()",
+        "Directory initialization is a one-time startup operation that should be logged"
+      ],
+      "files_created": [],
+      "files_modified": [
+        "src/downloader.rs"
+      ],
+      "test_results": {
+        "passed": 28,
+        "failed": 0,
+        "skipped": 0,
+        "duration_ms": null
+      },
+      "commit_hash": null
+    },
+    {
+      "task_id": "T-007",
+      "title": "Implement grade extractor",
+      "iteration": 0,
+      "completed_at": "2026-04-24T06:22:10.913089+00:00",
+      "approach": "Created src/extractor.rs with comprehensive grade extraction logic. Implemented extract_grades() to iterate through courses/enrollments and build ExtractedGrade structs with course_id, user_id, scores, and grades. Implemented save_grades_to_file() for JSON export with directory creation. Added get_grade_stats() using HashSet to count unique courses and users. Created extract_and_save_grades() that combines extraction and saving with proper logging integration. Included 7 unit tests covering: basic extraction, empty payloads, missing grades, file I/O, statistics calculation, and empty output handling. Updated main.rs with extractor module import.",
+      "learnings": [
+        "HashSet<u64> efficiently counts unique courses and users in grade data",
+        "Conditional file write - skip file creation if no grades extracted to avoid polluting output",
+        "serde_json::to_string_pretty() produces clean, readable JSON for grade export",
+        "Parent directory creation before file write ensures output directories exist",
+        "Grade extraction integrates enrollment iteration with optional grades handling"
+      ],
+      "gotchas": [
+        "Must check grades.is_empty() before saving to avoid creating empty JSON files",
+        "serde requires #[serde(derive)] on both CustomStruct and surrounding types",
+        "Enrollment can exist without grades - must handle Some/None properly"
+      ],
+      "files_created": [
+        "src/extractor.rs"
+      ],
+      "files_modified": [
+        "src/main.rs"
+      ],
+      "test_results": {
+        "passed": 35,
+        "failed": 0,
+        "skipped": 0,
+        "duration_ms": null
+      },
+      "commit_hash": null
+    },
+    {
+      "task_id": "T-008",
+      "title": "Implement video link extractor",
+      "iteration": 0,
+      "completed_at": "2026-04-24T07:04:13.464947+00:00",
+      "approach": "Created src/videos.rs with comprehensive video extraction. Implemented extract_videos() to iterate courses/modules/items and identify video URLs (YouTube, Vimeo, mp4, Canvas media). Used VideoProvider::from_url() to detect provider type. Implemented save_videos_to_file() for JSON export. Added get_video_stats() to count videos by provider type. Created extract_and_save_videos() combining extraction with logging integration. Used regex for URL extraction, is_video_url() helper for video detection, and HashSet to ensure uniqueness. Included 8 unit tests covering extraction, provider detection, stats, file I/O, empty payloads, and URL parsing. Added regex dependency to Cargo.toml. Updated main.rs with videos module import.",
+      "learnings": [
+        "HashSet<ExtractedVideo> automatically deduplicates videos by URL and provider",
+        "Regex pattern r\"(https?://[^\\s\\)]+)\" matches HTTP(S) URLs until whitespace",
+        "Provider detection uses existing VideoProvider::from_url() for consistency",
+        "VideoExtractionSummary counts by provider - YouTube, Vimeo, MP4, Other",
+        "extract_urls_from_text() provides regex-based URL extraction from text content"
+      ],
+      "gotchas": [
+        "Regex raw strings require escaping for special chars - use r prefix for readability",
+        "trim_end_matches() cleans trailing parens/quotes from regex results",
+        "Empty video results don't create output file - conditional save check is essential",
+        "HashSet requires PartialEq, Eq, Hash derives for items to work as set members"
+      ],
+      "files_created": [
+        "src/videos.rs"
+      ],
+      "files_modified": [
+        "src/main.rs",
+        "Cargo.toml"
+      ],
+      "test_results": {
+        "passed": 43,
+        "failed": 0,
+        "skipped": 0,
+        "duration_ms": null
+      },
+      "commit_hash": null
+    }
+  ],
+  "summary": {
+    "tasks_completed": 0,
+    "tasks_remaining": 0,
+    "total_commits": 0,
+    "total_files_created": 0,
+    "total_files_modified": 0,
+    "total_tests_passed": 0,
+    "total_tests_failed": 0
+  }
+}

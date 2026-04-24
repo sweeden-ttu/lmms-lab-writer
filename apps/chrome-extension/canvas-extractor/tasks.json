@@ -1,0 +1,254 @@
+{
+  "project": "canvas-payload-parser",
+  "language": "rust",
+  "phases": [],
+  "tasks": [
+    {
+      "id": "T-001",
+      "title": "Initialize Rust project structure",
+      "description": "Create Cargo.toml with dependencies and basic src/main.rs. Verify project builds successfully.",
+      "priority": 1,
+      "status": "completed",
+      "dependencies": [],
+      "user_story_id": "US-1",
+      "estimated_complexity": "low",
+      "files_created": [
+        "Cargo.toml",
+        "src/main.rs",
+        "README.md"
+      ],
+      "files_modified": [],
+      "commit_hash": null,
+      "attempts": 0,
+      "notes": "WHEN cargo build is run, THE project SHALL compile without errors"
+    },
+    {
+      "id": "T-002",
+      "title": "Implement data models",
+      "description": "Define serde-compatible structs for Canvas courses, modules, files, grades, and videos.",
+      "priority": 1,
+      "status": "completed",
+      "dependencies": [
+        "T-001"
+      ],
+      "user_story_id": "US-1",
+      "estimated_complexity": "medium",
+      "files_created": [
+        "src/models.rs"
+      ],
+      "files_modified": [
+        "src/main.rs"
+      ],
+      "commit_hash": null,
+      "attempts": 0,
+      "notes": "WHEN the payload is parsed, THE system SHALL log the number of courses or modules found"
+    },
+    {
+      "id": "T-003",
+      "title": "Implement payload parser",
+      "description": "Create parser module to read /tmp/course_payload.json and validate JSON structure with error handling.",
+      "priority": 1,
+      "status": "completed",
+      "dependencies": [
+        "T-002"
+      ],
+      "user_story_id": "US-1",
+      "estimated_complexity": "medium",
+      "files_created": [
+        "src/parser.rs"
+      ],
+      "files_modified": [
+        "src/main.rs"
+      ],
+      "commit_hash": null,
+      "attempts": 0,
+      "notes": "IF the file does not exist, THEN THE system SHALL log an error message and exit with code 1\nIF the file contains invalid JSON, THEN THE system SHALL log a parsing error and exit with code 1"
+    },
+    {
+      "id": "T-004",
+      "title": "Implement logging module",
+      "description": "Create logger with timestamp support, operation tracking, and structured output for startup, operations, and summary.",
+      "priority": 1,
+      "status": "completed",
+      "dependencies": [
+        "T-001"
+      ],
+      "user_story_id": "US-5",
+      "estimated_complexity": "low",
+      "files_created": [
+        "src/logger.rs"
+      ],
+      "files_modified": [
+        "src/main.rs"
+      ],
+      "commit_hash": null,
+      "attempts": 0,
+      "notes": "WHEN the script starts, THE system SHALL log a startup message with timestamp\nWHEN each major operation begins, THE system SHALL log the operation name"
+    },
+    {
+      "id": "T-005",
+      "title": "Implement file downloader",
+      "description": "Create downloader module with async HTTP client to download files and organize by course/module structure.",
+      "priority": 1,
+      "status": "completed",
+      "dependencies": [
+        "T-003"
+      ],
+      "user_story_id": "US-2",
+      "estimated_complexity": "high",
+      "files_created": [
+        "src/downloader.rs"
+      ],
+      "files_modified": [
+        "src/main.rs"
+      ],
+      "commit_hash": null,
+      "attempts": 0,
+      "notes": "WHEN downloading a file, THE system SHALL save it to a ./downloads directory organized by course/module\nIF a download fails, THEN THE system SHALL log the error and continue with remaining files"
+    },
+    {
+      "id": "T-006",
+      "title": "Implement directory creation",
+      "description": "Add logic to create downloads and output directories if they don't exist.",
+      "priority": 1,
+      "status": "completed",
+      "dependencies": [
+        "T-005"
+      ],
+      "user_story_id": "US-2",
+      "estimated_complexity": "low",
+      "files_created": [],
+      "files_modified": [
+        "src/downloader.rs"
+      ],
+      "commit_hash": null,
+      "attempts": 0,
+      "notes": "IF the downloads directory does not exist, THEN THE system SHALL create it"
+    },
+    {
+      "id": "T-007",
+      "title": "Implement grade extractor",
+      "description": "Create grade extraction logic to parse assignment names, scores, and total points, then save to output/grades.json.",
+      "priority": 1,
+      "status": "completed",
+      "dependencies": [
+        "T-003"
+      ],
+      "user_story_id": "US-3",
+      "estimated_complexity": "medium",
+      "files_created": [
+        "src/extractor.rs"
+      ],
+      "files_modified": [
+        "src/main.rs"
+      ],
+      "commit_hash": null,
+      "attempts": 0,
+      "notes": "WHEN grades are found, THE system SHALL extract assignment name, score, and total points\nWHEN grades are extracted, THE system SHALL save them to ./output/grades.json"
+    },
+    {
+      "id": "T-008",
+      "title": "Implement video link extractor",
+      "description": "Add video extraction logic to identify YouTube, Vimeo, mp4, and embedded videos, then save to output/videos.json.",
+      "priority": 1,
+      "status": "completed",
+      "dependencies": [
+        "T-007"
+      ],
+      "user_story_id": "US-4",
+      "estimated_complexity": "medium",
+      "files_created": [],
+      "files_modified": [
+        "src/extractor.rs",
+        "src/main.rs"
+      ],
+      "commit_hash": null,
+      "attempts": 0,
+      "notes": "WHEN the payload is parsed, THE system SHALL identify all video links (YouTube, Vimeo, mp4, embedded videos)\nWHEN videos are extracted, THE system SHALL save them to ./output/videos.json"
+    },
+    {
+      "id": "T-009",
+      "title": "Implement CLI argument parsing",
+      "description": "Add clap-based CLI with --help and --version flags, including validation for invalid arguments.",
+      "priority": 2,
+      "status": "pending",
+      "dependencies": [
+        "T-001"
+      ],
+      "user_story_id": "US-6",
+      "estimated_complexity": "low",
+      "files_created": [],
+      "files_modified": [
+        "src/main.rs"
+      ],
+      "commit_hash": null,
+      "attempts": 0,
+      "notes": "WHEN the script is run with --help flag, THE system SHALL display usage information and exit\nWHEN the script is run with --version flag, THE system SHALL display the version number and exit"
+    },
+    {
+      "id": "T-010",
+      "title": "Implement operation logging and error handling",
+      "description": "Add logging for operation start/completion with duration tracking and comprehensive error context.",
+      "priority": 1,
+      "status": "in_progress",
+      "dependencies": [
+        "T-004"
+      ],
+      "user_story_id": "US-5",
+      "estimated_complexity": "medium",
+      "files_created": [],
+      "files_modified": [
+        "src/logger.rs",
+        "src/main.rs"
+      ],
+      "commit_hash": null,
+      "attempts": 0,
+      "notes": "WHEN each major operation completes, THE system SHALL log success/failure status and duration\nIF any error occurs, THEN THE system SHALL log the error with context before continuing or exiting"
+    },
+    {
+      "id": "T-011",
+      "title": "Implement summary reporting",
+      "description": "Add final summary logging with counts of downloaded files, grades found, and videos extracted.",
+      "priority": 1,
+      "status": "pending",
+      "dependencies": [
+        "T-005",
+        "T-007",
+        "T-008",
+        "T-010"
+      ],
+      "user_story_id": "US-5",
+      "estimated_complexity": "low",
+      "files_created": [],
+      "files_modified": [
+        "src/main.rs",
+        "src/logger.rs"
+      ],
+      "commit_hash": null,
+      "attempts": 0,
+      "notes": "WHEN the script completes, THE system SHALL log a summary including files downloaded, grades found, and videos extracted\nWHEN the script completes successfully, THE system SHALL exit with code 0"
+    },
+    {
+      "id": "T-012",
+      "title": "Integration testing and error path validation",
+      "description": "Test all error paths including missing file, invalid JSON, download failures, and empty result sets.",
+      "priority": 2,
+      "status": "pending",
+      "dependencies": [
+        "T-011"
+      ],
+      "user_story_id": "US-1",
+      "estimated_complexity": "medium",
+      "files_created": [
+        "tests/integration_test.rs"
+      ],
+      "files_modified": [],
+      "commit_hash": null,
+      "attempts": 0,
+      "notes": "WHEN any error occurs, THEN THE system SHALL exit with appropriate code and error message"
+    }
+  ],
+  "version": "1.0",
+  "created_at": "2026-04-24T05:47:17.498843+00:00",
+  "updated_at": "2026-04-24T07:05:49.220352+00:00"
+}
