@@ -4,6 +4,7 @@ mod models;
 mod parser;
 mod logger;
 mod downloader;
+mod extractor;
 
 #[tokio::main]
 async fn main() {
