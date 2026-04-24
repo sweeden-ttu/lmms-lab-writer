@@ -1,6 +1,7 @@
 use log::info;
 
 mod models;
+mod parser;
 
 fn main() {
     env_logger::init();
