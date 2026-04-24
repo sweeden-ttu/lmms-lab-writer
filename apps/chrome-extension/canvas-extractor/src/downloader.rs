@@ -10,6 +10,7 @@ use tokio::io::AsyncWriteExt;
 #[derive(Debug, Clone)]
 pub struct DownloadConfig {
     pub base_dir: PathBuf,
+    pub output_dir: PathBuf,
     pub timeout_seconds: u64,
 }
 
@@ -17,6 +18,7 @@ impl Default for DownloadConfig {
     fn default() -> Self {
         DownloadConfig {
             base_dir: PathBuf::from("./downloads"),
+            output_dir: PathBuf::from("./output"),
             timeout_seconds: 30,
         }
     }
@@ -29,6 +31,32 @@ pub struct DownloadStats {
     pub successful_downloads: usize,
     pub failed_downloads: usize,
     pub total_bytes_downloaded: u64,
+}
+
+/// Initialize all required directories
+///
+/// # Arguments
+/// * `config` - Download configuration
+///
+/// # Returns
+/// * `Result<()>` - Success or error
+pub fn initialize_directories(config: &DownloadConfig) -> Result<()> {
+    info!("Initializing directories");
+    
+    // Create downloads directory
+    fs::create_dir_all(&config.base_dir).with_context(|| {
+        format!("Failed to create downloads directory: {:?}", config.base_dir)
+    })?;
+    info!("Created downloads directory: {:?}", config.base_dir);
+    
+    // Create output directory
+    fs::create_dir_all(&config.output_dir).with_context(|| {
+        format!("Failed to create output directory: {:?}", config.output_dir)
+    })?;
+    info!("Created output directory: {:?}", config.output_dir);
+    
+    logger::log_operation_complete("initialize_directories", std::collections::HashMap::new());
+    Ok(())
 }
 
 /// Download a single file
@@ -224,10 +252,40 @@ mod tests {
     use tempfile::TempDir;
 
     #[test]
+    fn test_initialize_directories() {
+        let temp_dir = TempDir::new().unwrap();
+        let config = DownloadConfig {
+            base_dir: temp_dir.path().join("downloads"),
+            output_dir: temp_dir.path().join("output"),
+            timeout_seconds: 30,
+        };
+
+        let result = initialize_directories(&config);
+        assert!(result.is_ok());
+        assert!(config.base_dir.exists());
+        assert!(config.output_dir.exists());
+    }
+
+    #[test]
+    fn test_initialize_directories_idempotent() {
+        let temp_dir = TempDir::new().unwrap();
+        let config = DownloadConfig {
+            base_dir: temp_dir.path().join("downloads"),
+            output_dir: temp_dir.path().join("output"),
+            timeout_seconds: 30,
+        };
+
+        // Create directories twice - should not error
+        assert!(initialize_directories(&config).is_ok());
+        assert!(initialize_directories(&config).is_ok());
+    }
+
+    #[test]
     fn test_create_directory_structure() {
         let temp_dir = TempDir::new().unwrap();
         let config = DownloadConfig {
             base_dir: temp_dir.path().to_path_buf(),
+            output_dir: temp_dir.path().join("output"),
             timeout_seconds: 30,
         };
 
@@ -245,6 +303,7 @@ mod tests {
         let config = DownloadConfig::default();
         assert_eq!(config.timeout_seconds, 30);
         assert_eq!(config.base_dir.to_string_lossy(), "./downloads");
+        assert_eq!(config.output_dir.to_string_lossy(), "./output");
     }
 
     #[test]
